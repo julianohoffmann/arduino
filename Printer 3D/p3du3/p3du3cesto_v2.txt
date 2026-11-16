@@ -1,0 +1,349 @@
+/*
+====================================================
+IMPRESSORA 3D EDUCACIONAL
+VERSÃO COM EXTRUSOR
+====================================================
+*/
+
+const int PASSOS_POR_CM = 250;
+
+const int VEL_XY = 20;
+const int VEL_Z  = 18;
+
+const int PASSOS_Z = 15;
+
+long posX = 0;
+long posY = 0;
+long posZ = 0;
+
+//=========================
+// EXTRUSOR
+//=========================
+#define EXT1 A0
+#define EXT2 A1
+
+const int PASSOS_EXTRUSAO = 4;
+
+int contadorExtrusao = 0;
+
+//=========================
+#define ENX 9
+#define X1 2
+#define X2 3
+
+#define ENY 10
+#define Y1 4
+#define Y2 5
+
+#define ENZ1 11
+#define Z1A 6
+#define Z1B 7
+
+#define ENZ2 12
+#define Z2A 8
+#define Z2B 13
+
+//=========================
+void setup() {
+
+  pinMode(ENX, OUTPUT);
+  pinMode(X1, OUTPUT);
+  pinMode(X2, OUTPUT);
+
+  pinMode(ENY, OUTPUT);
+  pinMode(Y1, OUTPUT);
+  pinMode(Y2, OUTPUT);
+
+  pinMode(ENZ1, OUTPUT);
+  pinMode(Z1A, OUTPUT);
+  pinMode(Z1B, OUTPUT);
+
+  pinMode(ENZ2, OUTPUT);
+  pinMode(Z2A, OUTPUT);
+  pinMode(Z2B, OUTPUT);
+
+  pinMode(EXT1, OUTPUT);
+  pinMode(EXT2, OUTPUT);
+
+  digitalWrite(EXT1, LOW);
+  digitalWrite(EXT2, LOW);
+
+  pararTudo();
+
+  //extrudarTempo(1000);
+}
+
+void loop() {
+
+  for (int camada = 0; camada < 4; camada++) {
+
+    desenharQuadrado();
+
+    delay(1200);
+
+    subirCamada();
+  }
+
+  delay(1000);
+
+  descerTudo();
+
+  pararTudo();
+
+  while (true);
+}
+
+//=========================
+void desenharQuadrado() {
+
+  long dist = 4 * PASSOS_POR_CM;
+
+  moverX(posX + dist);
+  extrudarTempo(1000);
+  delay(6000);
+
+  moverY(posY + dist);
+  extrudarTempo(1000);
+  delay(6000);
+
+  moverX(posX - dist);
+  extrudarTempo(1000);
+  delay(6000);
+
+  moverY(posY - dist);
+  extrudarTempo(1000);
+  delay(6000);
+}
+
+//=========================
+void extrudarTempo(int tempoMs) {
+
+  unsigned long inicio = millis();
+
+  while (millis() - inicio < tempoMs) {
+
+    pulsoExtrusor();
+
+    delay(20);   // intervalo entre pulsos
+  }
+}
+
+void pulsoExtrusor() {
+
+  digitalWrite(EXT1, HIGH);
+  digitalWrite(EXT2, LOW);
+
+  delay(10);
+
+  digitalWrite(EXT1, LOW);
+  digitalWrite(EXT2, LOW);
+}
+
+void moverX(long alvo) {
+
+  int dir = (alvo > posX) ? 1 : -1;
+
+  while (posX != alvo) {
+
+    stepX(dir);
+
+    contadorExtrusao++;
+
+    if (contadorExtrusao >= PASSOS_EXTRUSAO) {
+
+      pulsoExtrusor();
+
+      contadorExtrusao = 0;
+    }
+
+    posX += dir;
+
+    delay(VEL_XY);
+  }
+
+  pararXY();
+}
+
+//==================================================
+
+void moverY(long alvo) {
+
+  int dir = (alvo > posY) ? 1 : -1;
+
+  while (posY != alvo) {
+
+    stepY(dir);
+
+    contadorExtrusao++;
+
+    if (contadorExtrusao >= PASSOS_EXTRUSAO) {
+
+      pulsoExtrusor();
+
+      contadorExtrusao = 0;
+    }
+
+    posY += dir;
+
+    delay(VEL_XY);
+  }
+
+  pararXY();
+}
+
+//==================================================
+
+void stepX(int dir) {
+
+  digitalWrite(X1, dir > 0 ? HIGH : LOW);
+  digitalWrite(X2, dir > 0 ? LOW : HIGH);
+
+  analogWrite(ENX, 130);
+
+  delay(2);
+
+  analogWrite(ENX, 0);
+}
+
+//==================================================
+
+void stepY(int dir) {
+
+  digitalWrite(Y1, dir > 0 ? HIGH : LOW);
+  digitalWrite(Y2, dir > 0 ? LOW : HIGH);
+
+  analogWrite(ENY, 130);
+
+  delay(2);
+
+  analogWrite(ENY, 0);
+}
+
+// SOBE UMA CAMADA
+void subirCamada() {
+
+  long alvoZ = posZ + PASSOS_Z;
+
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+
+  int pwm = 120;
+
+  while (posZ < alvoZ) {
+
+    stepZ(pwm);
+
+    posZ++;
+
+    pwm += 2;
+    if (pwm > 180) pwm = 180;
+
+    delay(VEL_Z);
+  }
+
+  manterZ();
+}
+
+//==================================================
+// DESCE PARA O Z INICIAL
+//==================================================
+
+void descerTudo() {
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, HIGH);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, HIGH);
+
+  int pwm = 120;
+
+  while (posZ > 0) {
+
+    analogWrite(ENZ1, pwm);
+    analogWrite(ENZ2, pwm);
+
+    delay(3);
+
+    analogWrite(ENZ1, pwm - 40);
+    analogWrite(ENZ2, pwm - 40);
+
+    posZ--;
+
+    pwm += 2;
+    if (pwm > 180) pwm = 180;
+
+    delay(VEL_Z);
+  }
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}
+
+//==================================================
+
+void stepZ(int pwm) {
+
+  analogWrite(ENZ1, pwm);
+  analogWrite(ENZ2, pwm);
+
+  delay(3);
+
+  analogWrite(ENZ1, pwm - 40);
+  analogWrite(ENZ2, pwm - 40);
+}
+
+//==================================================
+
+void manterZ() {
+
+  analogWrite(ENZ1, 90);
+  analogWrite(ENZ2, 90);
+
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+}
+
+void pararXY() {
+
+  analogWrite(ENX, 0);
+  analogWrite(ENY, 0);
+
+  digitalWrite(X1, LOW);
+  digitalWrite(X2, LOW);
+
+  digitalWrite(Y1, LOW);
+  digitalWrite(Y2, LOW);
+}
+
+//==================================================
+
+void pararTudo() {
+
+  pararXY();
+
+  // Desliga extrusor
+  digitalWrite(EXT1, LOW);
+  digitalWrite(EXT2, LOW);
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}

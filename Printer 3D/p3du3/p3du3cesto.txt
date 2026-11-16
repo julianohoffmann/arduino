@@ -1,0 +1,961 @@
+/*
+====================================================
+IMPRESSORA 3D EDUCACIONAL
+VERSÃO CESTO 3D
+PARTE 1/9
+====================================================
+
+Nesta versão será implementado:
+
+- Fundo em malha a 45°
+- Paredes
+- 6 camadas
+- Código modular
+
+(continua na Parte 2)
+*/
+
+const int PASSOS_POR_CM = 250;
+
+//=========================
+// VELOCIDADES
+//=========================
+
+const int VEL_XY = 20;
+const int VEL_Z  = 18;
+
+//=========================
+// TAMANHO DO CESTO
+//=========================
+
+const int LADO_CM = 4;
+
+const long LADO = LADO_CM * PASSOS_POR_CM;
+
+const int CAMADAS = 6;
+
+const int PASSOS_Z = 15;
+
+// distância entre as linhas do fundo
+
+const int ESPACAMENTO_MALHA = 40;
+
+//=========================
+// POSIÇÃO ATUAL
+//=========================
+
+long posX = 0;
+long posY = 0;
+long posZ = 0;
+
+//=========================
+// EXTRUSOR
+//=========================
+
+#define EXT1 A0
+#define EXT2 A1
+
+const int PASSOS_EXTRUSAO = 4;
+
+int contadorExtrusao = 0;
+
+//=========================
+// MOTOR X
+//=========================
+
+#define ENX 9
+#define X1 2
+#define X2 3
+
+//=========================
+// MOTOR Y
+//=========================
+
+#define ENY 10
+#define Y1 4
+#define Y2 5
+
+//=========================
+// MOTORES Z
+//=========================
+
+#define ENZ1 11
+#define Z1A 6
+#define Z1B 7
+
+#define ENZ2 12
+#define Z2A 8
+#define Z2B 13
+
+//==================================================
+// SETUP
+//==================================================
+
+void setup() {
+
+  pinMode(ENX, OUTPUT);
+  pinMode(X1, OUTPUT);
+  pinMode(X2, OUTPUT);
+
+  pinMode(ENY, OUTPUT);
+  pinMode(Y1, OUTPUT);
+  pinMode(Y2, OUTPUT);
+
+  pinMode(ENZ1, OUTPUT);
+  pinMode(Z1A, OUTPUT);
+  pinMode(Z1B, OUTPUT);
+
+  pinMode(ENZ2, OUTPUT);
+  pinMode(Z2A, OUTPUT);
+  pinMode(Z2B, OUTPUT);
+
+  pinMode(EXT1, OUTPUT);
+  pinMode(EXT2, OUTPUT);
+
+  digitalWrite(EXT1, LOW);
+  digitalWrite(EXT2, LOW);
+
+  pararTudo();
+}
+//==================================================
+// PARTE 2/9
+// LOOP PRINCIPAL
+//==================================================
+
+void loop() {
+
+  imprimirCesto();
+
+  delay(1000);
+
+  descerTudo();
+
+  pararTudo();
+
+  while (true);
+
+}
+
+//==================================================
+// IMPRESSÃO COMPLETA
+//==================================================
+
+void imprimirCesto() {
+
+  // Fundo do cesto
+  desenharFundo45();
+
+  // Primeira subida
+  subirCamada();
+
+  // Paredes
+  for (int camada = 0; camada < CAMADAS; camada++) {
+
+    desenharQuadrado();
+
+    if (camada < CAMADAS - 1) {
+
+      delay(600);
+
+      subirCamada();
+
+    }
+
+  }
+
+}
+
+//==================================================
+// DESENHA O QUADRADO
+//==================================================
+
+void desenharQuadrado() {
+
+  moverX(posX + LADO);
+
+  delay(300);
+
+  moverY(posY + LADO);
+
+  delay(300);
+
+  moverX(posX - LADO);
+
+  delay(300);
+
+  moverY(posY - LADO);
+
+  delay(300);
+
+}
+
+//==================================================
+// PROTÓTIPO DAS FUNÇÕES
+// (implementadas nas próximas partes)
+//==================================================
+
+void desenharFundo45();
+
+void moverX(long alvo);
+
+void moverY(long alvo);
+
+void moverDiagonal(long alvoX, long alvoY);
+
+void subirCamada();
+
+void descerTudo();
+
+void pararTudo();
+
+void pulsoExtrusor();
+
+void extrudarTempo(int tempoMs);
+
+void stepX(int dir);
+
+void stepY(int dir);
+
+void stepZ(int pwm);
+
+void manterZ();
+
+void pararXY();
+
+//==================================================
+// PARTE 3/9
+// MOVIMENTAÇÃO X, Y E DIAGONAL
+//==================================================
+
+void moverX(long alvo) {
+
+  int dir = (alvo > posX) ? 1 : -1;
+
+  while (posX != alvo) {
+
+    stepX(dir);
+
+    contadorExtrusao++;
+
+    if (contadorExtrusao >= PASSOS_EXTRUSAO) {
+
+      pulsoExtrusor();
+      contadorExtrusao = 0;
+
+    }
+
+    posX += dir;
+
+    delay(VEL_XY);
+
+  }
+
+  pararXY();
+
+}
+
+//==================================================
+
+void moverY(long alvo) {
+
+  int dir = (alvo > posY) ? 1 : -1;
+
+  while (posY != alvo) {
+
+    stepY(dir);
+
+    contadorExtrusao++;
+
+    if (contadorExtrusao >= PASSOS_EXTRUSAO) {
+
+      pulsoExtrusor();
+      contadorExtrusao = 0;
+
+    }
+
+    posY += dir;
+
+    delay(VEL_XY);
+
+  }
+
+  pararXY();
+
+}
+
+//==================================================
+// MOVIMENTO DIAGONAL 45°
+//==================================================
+
+void moverDiagonal(long alvoX, long alvoY) {
+
+  int dirX = (alvoX > posX) ? 1 : -1;
+  int dirY = (alvoY > posY) ? 1 : -1;
+
+  while (posX != alvoX && posY != alvoY) {
+
+    stepX(dirX);
+    stepY(dirY);
+
+    contadorExtrusao++;
+
+    if (contadorExtrusao >= PASSOS_EXTRUSAO) {
+
+      pulsoExtrusor();
+
+      contadorExtrusao = 0;
+
+    }
+
+    posX += dirX;
+    posY += dirY;
+
+    delay(VEL_XY);
+
+  }
+
+  pararXY();
+
+}
+
+//==================================================
+// PASSO MOTOR X
+//==================================================
+
+void stepX(int dir) {
+
+  digitalWrite(X1, dir > 0 ? HIGH : LOW);
+  digitalWrite(X2, dir > 0 ? LOW : HIGH);
+
+  analogWrite(ENX, 130);
+
+  delay(2);
+
+  analogWrite(ENX, 0);
+
+}
+
+//==================================================
+// PASSO MOTOR Y
+//==================================================
+
+void stepY(int dir) {
+
+  digitalWrite(Y1, dir > 0 ? HIGH : LOW);
+  digitalWrite(Y2, dir > 0 ? LOW : HIGH);
+
+  analogWrite(ENY, 130);
+
+  delay(2);
+
+  analogWrite(ENY, 0);
+
+}
+
+//==================================================
+// PARTE 4/9
+// EXTRUSOR
+//==================================================
+
+void extrudarTempo(int tempoMs) {
+
+  unsigned long inicio = millis();
+
+  while (millis() - inicio < tempoMs) {
+
+    pulsoExtrusor();
+
+    delay(20);
+
+  }
+
+}
+
+//==================================================
+// UM PULSO NO EXTRUSOR
+//==================================================
+
+void pulsoExtrusor() {
+
+  digitalWrite(EXT1, HIGH);
+  digitalWrite(EXT2, LOW);
+
+  delay(10);
+
+  digitalWrite(EXT1, LOW);
+  digitalWrite(EXT2, LOW);
+
+}
+
+//==================================================
+// EXTRUSÃO CONTÍNUA
+//==================================================
+
+void iniciarExtrusao() {
+
+  digitalWrite(EXT1, HIGH);
+  digitalWrite(EXT2, LOW);
+
+}
+
+//==================================================
+
+void pararExtrusao() {
+
+  digitalWrite(EXT1, LOW);
+  digitalWrite(EXT2, LOW);
+
+}
+
+//==================================================
+// EXTRUSÃO POR DISTÂNCIA
+//==================================================
+
+void controlarExtrusao() {
+
+  contadorExtrusao++;
+
+  if (contadorExtrusao >= PASSOS_EXTRUSAO) {
+
+    pulsoExtrusor();
+
+    contadorExtrusao = 0;
+
+  }
+
+}
+
+//==================================================
+// RESET DO CONTADOR
+//==================================================
+
+void resetExtrusao() {
+
+  contadorExtrusao = 0;
+
+}
+
+//==================================================
+// PARTE 5/9
+// CONTROLE DO EIXO Z
+//==================================================
+
+// SOBE UMA CAMADA
+void subirCamada() {
+
+  long alvoZ = posZ + PASSOS_Z;
+
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+
+  int pwm = 120;
+
+  while (posZ < alvoZ) {
+
+    stepZ(pwm);
+
+    posZ++;
+
+    pwm += 2;
+
+    if (pwm > 180)
+      pwm = 180;
+
+    delay(VEL_Z);
+
+  }
+
+  manterZ();
+
+}
+
+//==================================================
+// DESCE ATÉ A POSIÇÃO INICIAL
+//==================================================
+
+void descerTudo() {
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, HIGH);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, HIGH);
+
+  int pwm = 120;
+
+  while (posZ > 0) {
+
+    analogWrite(ENZ1, pwm);
+    analogWrite(ENZ2, pwm);
+
+    delay(3);
+
+    analogWrite(ENZ1, pwm - 40);
+    analogWrite(ENZ2, pwm - 40);
+
+    posZ--;
+
+    pwm += 2;
+
+    if (pwm > 180)
+      pwm = 180;
+
+    delay(VEL_Z);
+
+  }
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+
+}
+
+//==================================================
+// UM PASSO NO EIXO Z
+//==================================================
+
+void stepZ(int pwm) {
+
+  analogWrite(ENZ1, pwm);
+  analogWrite(ENZ2, pwm);
+
+  delay(3);
+
+  analogWrite(ENZ1, pwm - 40);
+  analogWrite(ENZ2, pwm - 40);
+
+}
+
+//==================================================
+// MANTÉM O EIXO Z PARADO
+//==================================================
+
+void manterZ() {
+
+  analogWrite(ENZ1, 90);
+  analogWrite(ENZ2, 90);
+
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+
+}
+
+//==================================================
+// PARTE 6/9
+// FUNDO DO CESTO
+// MALHA A 45°
+//==================================================
+
+void desenharFundo45() {
+
+  resetExtrusao();
+
+  // Canto inferior esquerdo
+  long inicioX = posX;
+  long inicioY = posY;
+
+  //================================================
+  // PRIMEIRA SÉRIE DE DIAGONAIS (/)
+  //================================================
+
+  for (long i = 0; i <= LADO; i += ESPACAMENTO_MALHA) {
+
+    moverX(inicioX + i);
+
+    moverDiagonal(inicioX, inicioY + i);
+
+  }
+
+  //================================================
+  // PARTE SUPERIOR
+  //================================================
+
+  for (long i = ESPACAMENTO_MALHA; i <= LADO; i += ESPACAMENTO_MALHA) {
+
+    moverY(inicioY + i);
+
+    moverDiagonal(inicioX + i, inicioY);
+
+  }
+
+  //================================================
+  // RETORNA AO CANTO INICIAL
+  //================================================
+
+  moverX(inicioX);
+
+  moverY(inicioY);
+
+  delay(500);
+
+  //================================================
+  // SEGUNDA SÉRIE (\)
+  //================================================
+
+  for (long i = 0; i <= LADO; i += ESPACAMENTO_MALHA) {
+
+    moverY(inicioY + i);
+
+    moverDiagonal(inicioX + i, inicioY);
+
+  }
+
+  //================================================
+  // LADO DIREITO
+  //================================================
+
+  for (long i = ESPACAMENTO_MALHA; i <= LADO; i += ESPACAMENTO_MALHA) {
+
+    moverX(inicioX + i);
+
+    moverDiagonal(inicioX, inicioY + i);
+
+  }
+
+  //================================================
+  // VOLTA AO INÍCIO
+  //================================================
+
+  moverX(inicioX);
+
+  moverY(inicioY);
+
+  delay(1000);
+
+}
+
+//==================================================
+// PARTE 7/9
+// PAREDES DO CESTO
+//==================================================
+
+void imprimirParedes() {
+
+  for (int camada = 0; camada < CAMADAS; camada++) {
+
+    desenharContorno();
+
+    if (camada < CAMADAS - 1) {
+
+      delay(600);
+
+      subirCamada();
+
+    }
+
+  }
+
+}
+
+//==================================================
+// CONTORNO EXTERNO
+//==================================================
+
+void desenharContorno() {
+
+  resetExtrusao();
+
+  moverX(posX + LADO);
+
+  delay(150);
+
+  moverY(posY + LADO);
+
+  delay(150);
+
+  moverX(posX - LADO);
+
+  delay(150);
+
+  moverY(posY - LADO);
+
+  delay(150);
+
+}
+
+//==================================================
+// REFORÇO DOS CANTOS
+//==================================================
+
+void reforcarCantos() {
+
+  extrudarTempo(250);
+
+  delay(120);
+
+  moverX(posX + 8);
+
+  moverX(posX - 8);
+
+  extrudarTempo(250);
+
+  delay(120);
+
+  moverY(posY + 8);
+
+  moverY(posY - 8);
+
+}
+
+//==================================================
+// CONTORNO DUPLO (OPCIONAL)
+//==================================================
+
+void desenharContornoDuplo() {
+
+  desenharContorno();
+
+  delay(300);
+
+  desenharContorno();
+
+}
+
+//==================================================
+// IMPRESSÃO COMPLETA DAS PAREDES
+//==================================================
+
+void imprimirCamada() {
+
+  desenharContorno();
+
+  reforcarCantos();
+
+}
+
+//==================================================
+// PARTE 8/9
+// FUNÇÕES AUXILIARES
+//==================================================
+
+void pararXY() {
+
+  analogWrite(ENX, 0);
+  analogWrite(ENY, 0);
+
+  digitalWrite(X1, LOW);
+  digitalWrite(X2, LOW);
+
+  digitalWrite(Y1, LOW);
+  digitalWrite(Y2, LOW);
+
+}
+
+//==================================================
+
+void pararTudo() {
+
+  pararXY();
+
+  pararExtrusao();
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+
+}
+
+//==================================================
+// IR PARA UMA POSIÇÃO
+//==================================================
+
+void irPara(long xDestino, long yDestino) {
+
+  moverX(xDestino);
+
+  moverY(yDestino);
+
+}
+
+//==================================================
+// RETORNAR À ORIGEM
+//==================================================
+
+void voltarOrigem() {
+
+  moverX(0);
+
+  moverY(0);
+
+}
+
+//==================================================
+// POSICIONA NO CENTRO DA ÁREA DE IMPRESSÃO
+//==================================================
+
+void centralizarPeca() {
+
+  long centro = (10 * PASSOS_POR_CM) / 2;
+
+  moverX(centro);
+
+  moverY(centro);
+
+}
+
+//==================================================
+// PAUSA PARA RESFRIAMENTO
+//==================================================
+
+void pausaEntreCamadas(int tempoMs) {
+
+  manterZ();
+
+  delay(tempoMs);
+
+}
+
+//==================================================
+// INICIALIZA A IMPRESSÃO
+//==================================================
+
+void iniciarImpressao() {
+
+  resetExtrusao();
+
+  centralizarPeca();
+
+  delay(500);
+
+}
+
+//==================================================
+// FINALIZA A IMPRESSÃO
+//==================================================
+
+void finalizarImpressao() {
+
+  delay(1000);
+
+  descerTudo();
+
+  pararTudo();
+
+}
+
+//==================================================
+// PARTE 9/9
+// FINALIZAÇÃO
+//==================================================
+
+//==================================================
+// CONFIGURAÇÕES DO USUÁRIO
+//==================================================
+
+/*
+
+==========================
+AJUSTES RÁPIDOS
+==========================
+
+Tamanho do cesto
+
+const int LADO_CM = 4;
+
+--------------------------------
+
+Quantidade de camadas
+
+const int CAMADAS = 6;
+
+--------------------------------
+
+Altura de cada camada
+
+const int PASSOS_Z = 15;
+
+--------------------------------
+
+Velocidade XY
+
+const int VEL_XY = 20;
+
+--------------------------------
+
+Velocidade Z
+
+const int VEL_Z = 18;
+
+--------------------------------
+
+Espaçamento da malha
+
+const int ESPACAMENTO_MALHA = 40;
+
+--------------------------------
+
+Extrusão
+
+const int PASSOS_EXTRUSAO = 4;
+
+*/
+
+//==================================================
+// OBSERVAÇÕES
+//==================================================
+
+/*
+
+Fluxo da impressão
+
+↓
+
+Centraliza a peça
+
+↓
+
+Imprime o fundo em malha 45°
+
+↓
+
+Sobe uma camada
+
+↓
+
+Imprime as paredes
+
+↓
+
+Sobe
+
+↓
+
+Imprime novamente
+
+↓
+
+...
+
+↓
+
+6 camadas
+
+↓
+
+Desce automaticamente
+
+↓
+
+Desliga todos os motores
+
+*/
+
+//==================================================
+// FIM DO PROGRAMA
+//==================================================

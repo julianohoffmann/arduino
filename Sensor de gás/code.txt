@@ -1,0 +1,26 @@
+int smoke = 0 ;
+void setup()
+{
+    Serial.begin(9600);
+    pinMode(7,INPUT);    // Smoke Sensor
+    pinMode(6,OUTPUT);   // Red led
+    pinMode(5,OUTPUT);   // Motor 
+}
+void loop() 
+{
+  smoke = digitalRead(7);  // Smoke Sensor
+  Serial.println(smoke);    
+  delay(100);
+  
+    if(smoke == 0 )
+  {
+    digitalWrite(6,HIGH);  // Red led on 
+    digitalWrite(5,LOW);   //Motor 
+  } 
+  
+   if(smoke == 1 )
+  {
+    digitalWrite(6,LOW);     // RED led off
+    digitalWrite(5,HIGH);    // Motor 
+  } 
+  }

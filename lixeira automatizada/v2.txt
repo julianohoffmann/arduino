@@ -1,0 +1,79 @@
+#include <Servo.h>
+
+Servo tampa;
+
+const int trigPin = 9;
+const int echoPin = 10;
+
+long duracao;
+int distancia;
+
+bool sistemaPronto = false;
+bool aberto = false;
+
+unsigned long tempoInicio;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  Serial.begin(9600);
+
+  // Inicializa servo (fechado)
+  tampa.attach(6);
+  tampa.write(90);
+
+  // Marca tempo inicial
+  tempoInicio = millis();
+}
+
+void loop() {
+
+  // 🔒 Aguarda estabilização (evita abrir ao ligar)
+  if (millis() - tempoInicio < 2000) {
+    return;
+  }
+
+  sistemaPronto = true;
+
+  // 📡 Leitura do sensor ultrassônico
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duracao = pulseIn(echoPin, HIGH);
+  distancia = duracao * 0.034 / 2;
+
+  Serial.print("Distancia: ");
+  Serial.println(distancia);
+
+  // 🎯 Condição de abertura
+  if (sistemaPronto && distancia > 0 && distancia <= 20 && !aberto) {
+    abrirTampa();
+  }
+
+  delay(150);
+}
+
+void abrirTampa() {
+  aberto = true;
+
+  // 🔼 ABRE SUAVE
+  for (int pos = 90; pos >= 0; pos--) {
+    tampa.write(pos);
+    delay(10);
+  }
+
+  delay(3000); // tempo aberto
+
+  // 🔽 FECHA SUAVE
+  for (int pos = 0; pos <= 90; pos++) {
+    tampa.write(pos);
+    delay(15);
+  }
+
+  aberto = false;
+}

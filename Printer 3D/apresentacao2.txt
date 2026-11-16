@@ -1,0 +1,392 @@
+/*
+====================================================
+DEMO IMPRESSORA 3D EDUCACIONAL
+SIMULAÇÃO DE IMPRESSÃO COMPACTA
+
+SEQUÊNCIA:
+1. Mini quadrado
+2. Mini firula
+3. Mini círculo
+
+✔ Movimentos curtos
+✔ Mais rápidos
+✔ Mais elegantes
+✔ Ideal para bancada/demonstração
+====================================================
+*/
+
+
+// ==================================================
+// VELOCIDADES
+// ==================================================
+
+int VELOCIDADE_XY = 110;
+
+int VELOCIDADE_Z_SUBIDA = 255;
+
+int KICK_XY = 190;
+int KICK_Z_SUBIDA = 255;
+
+
+// ==================================================
+// MOVIMENTOS CURTOS
+// ==================================================
+
+int PASSO_MICRO = 70;
+int PASSO_CURTO = 110;
+int PASSO_MEDIO = 150;
+
+int ALTURA_Z = 180;
+
+
+// ==================================================
+// EIXO X
+// ==================================================
+
+int ENX = 9;
+int X1  = 2;
+int X2  = 3;
+
+
+// ==================================================
+// EIXO Y
+// ==================================================
+
+int ENY = 10;
+int Y1  = 4;
+int Y2  = 5;
+
+
+// ==================================================
+// EIXO Z MOTOR 1
+// ==================================================
+
+int ENZ1 = 11;
+int Z1A  = 6;
+int Z1B  = 7;
+
+
+// ==================================================
+// EIXO Z MOTOR 2
+// ==================================================
+
+int ENZ2 = 12;
+int Z2A  = 8;
+int Z2B  = 13;
+
+
+
+// ==================================================
+void setup() {
+
+  pinMode(ENX, OUTPUT);
+  pinMode(X1, OUTPUT);
+  pinMode(X2, OUTPUT);
+
+  pinMode(ENY, OUTPUT);
+  pinMode(Y1, OUTPUT);
+  pinMode(Y2, OUTPUT);
+
+  pinMode(ENZ1, OUTPUT);
+  pinMode(Z1A, OUTPUT);
+  pinMode(Z1B, OUTPUT);
+
+  pinMode(ENZ2, OUTPUT);
+  pinMode(Z2A, OUTPUT);
+  pinMode(Z2B, OUTPUT);
+
+  pararTudo();
+}
+
+
+
+// ==================================================
+void loop() {
+
+  // =========================================
+  // SOBE Z
+  // =========================================
+
+  moverZSubida(ALTURA_Z);
+
+  delay(300);
+
+
+  // =========================================
+  // MINI QUADRADO
+  // =========================================
+
+  miniQuadrado();
+
+  delay(250);
+
+
+  // =========================================
+  // MINI FIRULA
+  // =========================================
+
+  miniFirula();
+
+  delay(250);
+
+
+  // =========================================
+  // MINI CÍRCULO
+  // =========================================
+
+  miniCirculo();
+
+  delay(500);
+
+
+  // =========================================
+  // DESCE Z
+  // =========================================
+
+  moverZDescida(ALTURA_Z);
+
+  delay(1800);
+}
+
+
+
+// ==================================================
+// MINI QUADRADO
+// ==================================================
+void miniQuadrado() {
+
+  moverX(true, PASSO_CURTO);
+
+  moverY(true, PASSO_CURTO);
+
+  moverX(false, PASSO_CURTO);
+
+  moverY(false, PASSO_CURTO);
+}
+
+
+
+// ==================================================
+// MINI FIRULA
+// ==================================================
+void miniFirula() {
+
+  for (int i = 0; i < 2; i++) {
+
+    moverX(true, PASSO_MICRO);
+
+    moverY(true, PASSO_MICRO);
+
+    moverX(false, PASSO_MICRO);
+
+    moverY(false, PASSO_MICRO);
+  }
+}
+
+
+
+// ==================================================
+// MINI CÍRCULO
+// ==================================================
+void miniCirculo() {
+
+  for (int i = 0; i < 2; i++) {
+
+    moverX(true, PASSO_MICRO);
+
+    moverY(true, PASSO_MICRO / 2);
+
+    moverX(false, PASSO_MICRO / 2);
+
+    moverY(true, PASSO_MICRO / 2);
+
+    moverX(false, PASSO_MICRO);
+
+    moverY(false, PASSO_MICRO / 2);
+
+    moverX(true, PASSO_MICRO / 2);
+
+    moverY(false, PASSO_MICRO / 2);
+  }
+}
+
+
+
+// ==================================================
+// MOVIMENTO X
+// ==================================================
+void moverX(bool sentido, int tempoTotal) {
+
+  moverXY(ENX, X1, X2, sentido, tempoTotal);
+}
+
+
+
+// ==================================================
+// MOVIMENTO Y
+// ==================================================
+void moverY(bool sentido, int tempoTotal) {
+
+  moverXY(ENY, Y1, Y2, sentido, tempoTotal);
+}
+
+
+
+// ==================================================
+// MOVIMENTO XY
+// ==================================================
+void moverXY(int EN, int P1, int P2, bool sentido, int tempoTotal) {
+
+  if (sentido) {
+
+    digitalWrite(P1, HIGH);
+    digitalWrite(P2, LOW);
+
+  } else {
+
+    digitalWrite(P1, LOW);
+    digitalWrite(P2, HIGH);
+  }
+
+  analogWrite(EN, KICK_XY);
+
+  delay(25);
+
+
+  for (int v = KICK_XY; v >= VELOCIDADE_XY; v -= 10) {
+
+    analogWrite(EN, v);
+
+    delay(3);
+  }
+
+  analogWrite(EN, VELOCIDADE_XY);
+
+  delay(tempoTotal);
+
+
+  for (int v = VELOCIDADE_XY; v >= 0; v -= 10) {
+
+    analogWrite(EN, v);
+
+    delay(3);
+  }
+
+  analogWrite(EN, 0);
+
+  digitalWrite(P1, LOW);
+  digitalWrite(P2, LOW);
+
+  delay(25);
+}
+
+
+
+// ==================================================
+// Z SUBIDA
+// ==================================================
+void moverZSubida(int tempoTotal) {
+
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+
+  analogWrite(ENZ1, KICK_Z_SUBIDA);
+  analogWrite(ENZ2, KICK_Z_SUBIDA);
+
+  delay(80);
+
+  analogWrite(ENZ1, VELOCIDADE_Z_SUBIDA);
+  analogWrite(ENZ2, VELOCIDADE_Z_SUBIDA);
+
+  delay(tempoTotal);
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}
+
+
+
+// ==================================================
+// Z DESCIDA FREANDO
+// ==================================================
+void moverZDescida(int tempoTotal) {
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, HIGH);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, HIGH);
+
+  int pwm = 85;
+
+  analogWrite(ENZ1, pwm);
+  analogWrite(ENZ2, pwm);
+
+  for (int t = 0; t < tempoTotal; t += 20) {
+
+    analogWrite(ENZ1, pwm);
+    analogWrite(ENZ2, pwm);
+
+    delay(20);
+
+    if (pwm > 45 && t % 100 == 0) {
+
+      pwm--;
+    }
+  }
+
+  for (int v = pwm; v >= 30; v--) {
+
+    analogWrite(ENZ1, v);
+    analogWrite(ENZ2, v);
+
+    delay(25);
+  }
+
+  analogWrite(ENZ1, 22);
+  analogWrite(ENZ2, 22);
+
+  delay(50);
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}
+
+
+
+// ==================================================
+void pararTudo() {
+
+  analogWrite(ENX, 0);
+  analogWrite(ENY, 0);
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(X1, LOW);
+  digitalWrite(X2, LOW);
+
+  digitalWrite(Y1, LOW);
+  digitalWrite(Y2, LOW);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}

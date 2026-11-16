@@ -1,0 +1,373 @@
+/*
+====================================================
+IMPRESSORA 3D EDUCACIONAL
+2x L298N
+
+VERSÃO:
+✔ X/Y suaves
+✔ Z sobe com força máxima
+✔ Z desce suavemente
+✔ Movimento mais fluido
+✔ 2 motores independentes no Z
+====================================================
+
+
+L298 #1
+----------------------------------------------------
+
+PORTA A = EIXO X
+ENA = 9
+IN1 = 2
+IN2 = 3
+
+PORTA B = EIXO Y
+ENB = 10
+IN3 = 4
+IN4 = 5
+
+
+L298 #2
+----------------------------------------------------
+
+PORTA A = EIXO Z MOTOR 1
+ENA = 11
+IN1 = 6
+IN2 = 7
+
+PORTA B = EIXO Z MOTOR 2
+ENB = 12
+IN3 = 8
+IN4 = 13
+====================================================
+*/
+
+
+// ==================================================
+// VELOCIDADES
+// ==================================================
+
+// X/Y suaves
+int VELOCIDADE_XY = 105;
+
+// Z SUBIDA (forte)
+int VELOCIDADE_Z_SUBIDA = 255;
+
+// Z DESCIDA (suave)
+int VELOCIDADE_Z_DESCIDA = 120;
+
+
+// ==================================================
+// FORÇA INICIAL
+// ==================================================
+
+int KICK_XY = 190;
+
+// SUBIDA Z
+int KICK_Z_SUBIDA = 255;
+
+// DESCIDA Z
+int KICK_Z_DESCIDA = 150;
+
+
+// ==================================================
+// DESLOCAMENTOS
+// ==================================================
+
+int DESLOCAMENTO_X = 180;
+int DESLOCAMENTO_Y = 220;
+int DESLOCAMENTO_Z = 350;
+
+
+// ==================================================
+// EIXO X
+// ==================================================
+
+int ENX = 9;
+
+int X1  = 2;
+int X2  = 3;
+
+
+// ==================================================
+// EIXO Y
+// ==================================================
+
+int ENY = 10;
+
+int Y1  = 4;
+int Y2  = 5;
+
+
+// ==================================================
+// EIXO Z MOTOR 1
+// ==================================================
+
+int ENZ1 = 11;
+
+int Z1A  = 6;
+int Z1B  = 7;
+
+
+// ==================================================
+// EIXO Z MOTOR 2
+// ==================================================
+
+int ENZ2 = 12;
+
+int Z2A  = 8;
+int Z2B  = 13;
+
+
+
+// ==================================================
+void setup() {
+
+  // X
+  pinMode(ENX, OUTPUT);
+  pinMode(X1, OUTPUT);
+  pinMode(X2, OUTPUT);
+
+  // Y
+  pinMode(ENY, OUTPUT);
+  pinMode(Y1, OUTPUT);
+  pinMode(Y2, OUTPUT);
+
+  // Z1
+  pinMode(ENZ1, OUTPUT);
+  pinMode(Z1A, OUTPUT);
+  pinMode(Z1B, OUTPUT);
+
+  // Z2
+  pinMode(ENZ2, OUTPUT);
+  pinMode(Z2A, OUTPUT);
+  pinMode(Z2B, OUTPUT);
+
+  pararTudo();
+}
+
+
+
+// ==================================================
+void loop() {
+
+  // =========================================
+  // EIXO X
+  // =========================================
+
+  moverXY(ENX, X1, X2, true, DESLOCAMENTO_X);
+
+  delay(250);
+
+  moverXY(ENX, X1, X2, false, DESLOCAMENTO_X);
+
+  delay(500);
+
+
+  // =========================================
+  // EIXO Y
+  // =========================================
+
+  moverXY(ENY, Y1, Y2, true, DESLOCAMENTO_Y);
+
+  delay(250);
+
+  moverXY(ENY, Y1, Y2, false, DESLOCAMENTO_Y);
+
+  delay(500);
+
+
+  // =========================================
+  // EIXO Z SOBE
+  // =========================================
+
+  moverZSubida(DESLOCAMENTO_Z);
+
+  delay(400);
+
+
+  // =========================================
+  // EIXO Z DESCE SUAVE
+  // =========================================
+
+  moverZDescida(DESLOCAMENTO_Z);
+
+  delay(1500);
+}
+
+
+
+// ==================================================
+// MOVIMENTO X/Y
+// ==================================================
+void moverXY(int EN, int P1, int P2, bool sentido, int tempoTotal) {
+
+  if (sentido) {
+
+    digitalWrite(P1, HIGH);
+    digitalWrite(P2, LOW);
+
+  } else {
+
+    digitalWrite(P1, LOW);
+    digitalWrite(P2, HIGH);
+  }
+
+  analogWrite(EN, KICK_XY);
+
+  delay(60);
+
+  for (int v = KICK_XY; v >= VELOCIDADE_XY; v -= 10) {
+
+    analogWrite(EN, v);
+
+    delay(8);
+  }
+
+  analogWrite(EN, VELOCIDADE_XY);
+
+  delay(tempoTotal);
+
+  for (int v = VELOCIDADE_XY; v >= 0; v -= 10) {
+
+    analogWrite(EN, v);
+
+    delay(8);
+  }
+
+  analogWrite(EN, 0);
+
+  digitalWrite(P1, LOW);
+  digitalWrite(P2, LOW);
+}
+
+
+
+// ==================================================
+// Z SUBIDA FORTE
+// ==================================================
+void moverZSubida(int tempoTotal) {
+
+  // DIREÇÃO SUBIDA
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+
+
+  // FORÇA TOTAL
+  analogWrite(ENZ1, KICK_Z_SUBIDA);
+  analogWrite(ENZ2, KICK_Z_SUBIDA);
+
+  delay(120);
+
+
+  // MOVIMENTO
+  analogWrite(ENZ1, VELOCIDADE_Z_SUBIDA);
+  analogWrite(ENZ2, VELOCIDADE_Z_SUBIDA);
+
+  delay(tempoTotal);
+
+
+  // PEQUENA FRENAGEM
+  for (int v = VELOCIDADE_Z_SUBIDA; v >= 120; v -= 20) {
+
+    analogWrite(ENZ1, v);
+    analogWrite(ENZ2, v);
+
+    delay(5);
+  }
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}
+
+
+
+// ==================================================
+// Z DESCIDA SUAVE E CONTROLADA
+// ==================================================
+void moverZDescida(int tempoTotal) {
+
+  // DIREÇÃO DESCIDA
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, HIGH);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, HIGH);
+
+
+  // PARTIDA SUAVE
+  analogWrite(ENZ1, KICK_Z_DESCIDA);
+  analogWrite(ENZ2, KICK_Z_DESCIDA);
+
+  delay(80);
+
+
+  // ACELERAÇÃO SUAVE
+  for (int v = KICK_Z_DESCIDA; v >= VELOCIDADE_Z_DESCIDA; v -= 5) {
+
+    analogWrite(ENZ1, v);
+    analogWrite(ENZ2, v);
+
+    delay(12);
+  }
+
+
+  // DESCIDA CONTROLADA
+  analogWrite(ENZ1, VELOCIDADE_Z_DESCIDA);
+  analogWrite(ENZ2, VELOCIDADE_Z_DESCIDA);
+
+  delay(tempoTotal);
+
+
+  // FRENAGEM SUAVE
+  for (int v = VELOCIDADE_Z_DESCIDA; v >= 0; v -= 5) {
+
+    analogWrite(ENZ1, v);
+    analogWrite(ENZ2, v);
+
+    delay(15);
+  }
+
+
+  // PARADA
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}
+
+
+
+// ==================================================
+void pararTudo() {
+
+  analogWrite(ENX, 0);
+  analogWrite(ENY, 0);
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(X1, LOW);
+  digitalWrite(X2, LOW);
+
+  digitalWrite(Y1, LOW);
+  digitalWrite(Y2, LOW);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}

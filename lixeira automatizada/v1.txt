@@ -1,0 +1,51 @@
+#include <Servo.h>
+
+Servo tampa;
+
+const int trigPin = 9;
+const int echoPin = 10;
+
+long duracao;
+int distancia;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  
+  tampa.attach(6);
+  tampa.write(90); // tampa fechada
+  
+  Serial.begin(9600);
+}
+
+void loop() {
+  // Envia pulso ultrassônico
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Recebe o sinal
+  duracao = pulseIn(echoPin, HIGH);
+  
+  // Calcula distância
+  distancia = duracao * 0.034 / 2;
+
+  Serial.print("Distancia: ");
+  Serial.println(distancia);
+
+  // Se detectar mão próxima
+  if (distancia > 0 && distancia <= 10) {
+    abrirTampa();
+  }
+
+  delay(200);
+}
+
+void abrirTampa() {
+  tampa.write(0); // abre
+  delay(3000);     // espera 3 segundos
+  tampa.write(105);  // fecha
+}

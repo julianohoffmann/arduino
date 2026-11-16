@@ -1,0 +1,394 @@
+/*
+====================================================
+SIMULAÇÃO DE IMPRESSÃO 3D
+CAMADAS COM PAUSA NO EIXO Z
+
+✔ X/Y fazem movimentos suaves
+✔ Z sobe por camadas
+✔ Z trava eletricamente
+✔ Sem descida automática
+✔ Simula impressão 3D real
+✔ 5 camadas
+✔ Controle individual dos motores Z
+====================================================
+
+
+L298 #1
+----------------------------------------------------
+
+PORTA A = EIXO X
+ENA = 9
+IN1 = 2
+IN2 = 3
+
+PORTA B = EIXO Y
+ENB = 10
+IN3 = 4
+IN4 = 5
+
+
+L298 #2
+----------------------------------------------------
+
+PORTA A = Z MOTOR 1
+ENA = 11
+IN1 = 6
+IN2 = 7
+
+PORTA B = Z MOTOR 2
+ENB = 12
+IN3 = 8
+IN4 = 13
+====================================================
+*/
+
+
+// ==================================================
+// VELOCIDADES
+// ==================================================
+
+int VELOCIDADE_XY = 100;
+
+int KICK_XY = 180;
+
+
+// ==================================================
+// CONTROLE INDIVIDUAL Z
+// ==================================================
+
+int VELOCIDADE_Z1 = 255;
+int VELOCIDADE_Z2 = 245;
+
+
+// ==================================================
+// MOVIMENTOS
+// ==================================================
+
+int PASSO = 90;
+
+int ALTURA_CAMADA = 70;
+
+int TOTAL_CAMADAS = 5;
+
+
+// ==================================================
+// EIXO X
+// ==================================================
+
+int ENX = 9;
+
+int X1 = 2;
+int X2 = 3;
+
+
+// ==================================================
+// EIXO Y
+// ==================================================
+
+int ENY = 10;
+
+int Y1 = 4;
+int Y2 = 5;
+
+
+// ==================================================
+// Z MOTOR 1
+// ==================================================
+
+int ENZ1 = 11;
+
+int Z1A = 6;
+int Z1B = 7;
+
+
+// ==================================================
+// Z MOTOR 2
+// ==================================================
+
+int ENZ2 = 12;
+
+int Z2A = 8;
+int Z2B = 13;
+
+
+
+// ==================================================
+void setup() {
+
+  pinMode(ENX, OUTPUT);
+  pinMode(X1, OUTPUT);
+  pinMode(X2, OUTPUT);
+
+  pinMode(ENY, OUTPUT);
+  pinMode(Y1, OUTPUT);
+  pinMode(Y2, OUTPUT);
+
+  pinMode(ENZ1, OUTPUT);
+  pinMode(Z1A, OUTPUT);
+  pinMode(Z1B, OUTPUT);
+
+  pinMode(ENZ2, OUTPUT);
+  pinMode(Z2A, OUTPUT);
+  pinMode(Z2B, OUTPUT);
+
+  pararTudo();
+}
+
+
+
+// ==================================================
+void loop() {
+
+  // =========================================
+  // SIMULA 5 CAMADAS
+  // =========================================
+
+  for (int camada = 0; camada < TOTAL_CAMADAS; camada++) {
+
+    // =====================================
+    // "IMPRESSÃO" DA CAMADA
+    // =====================================
+
+    imprimirCamada();
+
+
+    // =====================================
+    // SOBE Z
+    // =====================================
+
+    subirCamadaZ();
+
+
+    // =====================================
+    // PAUSA ENTRE CAMADAS
+    // =====================================
+
+    delay(800);
+  }
+
+
+  // =========================================
+  // FINALIZAÇÃO
+  // =========================================
+
+  pararTudo();
+
+  while (true);
+}
+
+
+
+// ==================================================
+// IMPRESSÃO DA CAMADA
+// ==================================================
+void imprimirCamada() {
+
+  quadrado();
+
+  firula();
+
+  miniOrbita();
+}
+
+
+
+// ==================================================
+// QUADRADO
+// ==================================================
+void quadrado() {
+
+  moverX(true, PASSO);
+
+  moverY(true, PASSO);
+
+  moverX(false, PASSO);
+
+  moverY(false, PASSO);
+}
+
+
+
+// ==================================================
+// FIRULA
+// ==================================================
+void firula() {
+
+  moverX(true, PASSO / 2);
+
+  moverY(true, PASSO / 2);
+
+  moverX(false, PASSO / 2);
+
+  moverY(false, PASSO / 2);
+}
+
+
+
+// ==================================================
+// MINI ÓRBITA
+// ==================================================
+void miniOrbita() {
+
+  moverX(true, PASSO / 2);
+
+  moverY(true, PASSO / 3);
+
+  moverX(false, PASSO / 3);
+
+  moverY(false, PASSO / 2);
+}
+
+
+
+// ==================================================
+// MOVIMENTO X
+// ==================================================
+void moverX(bool sentido, int tempoTotal) {
+
+  moverXY(ENX, X1, X2, sentido, tempoTotal);
+}
+
+
+
+// ==================================================
+// MOVIMENTO Y
+// ==================================================
+void moverY(bool sentido, int tempoTotal) {
+
+  moverXY(ENY, Y1, Y2, sentido, tempoTotal);
+}
+
+
+
+// ==================================================
+// MOVIMENTO XY
+// ==================================================
+void moverXY(int EN, int P1, int P2, bool sentido, int tempoTotal) {
+
+  // DIREÇÃO
+  if (sentido) {
+
+    digitalWrite(P1, HIGH);
+    digitalWrite(P2, LOW);
+
+  } else {
+
+    digitalWrite(P1, LOW);
+    digitalWrite(P2, HIGH);
+  }
+
+
+  // ARRANQUE SUAVE
+  analogWrite(EN, KICK_XY);
+
+  delay(25);
+
+
+  // TRANSIÇÃO
+  for (int v = KICK_XY; v >= VELOCIDADE_XY; v -= 8) {
+
+    analogWrite(EN, v);
+
+    delay(3);
+  }
+
+
+  // MOVIMENTO
+  analogWrite(EN, VELOCIDADE_XY);
+
+  delay(tempoTotal);
+
+
+  // FRENAGEM
+  for (int v = VELOCIDADE_XY; v >= 0; v -= 8) {
+
+    analogWrite(EN, v);
+
+    delay(3);
+  }
+
+
+  // PARADA
+  analogWrite(EN, 0);
+
+  digitalWrite(P1, LOW);
+  digitalWrite(P2, LOW);
+
+  delay(20);
+}
+
+
+
+// ==================================================
+// SOBE UMA CAMADA Z
+// E TRAVA ELETRICAMENTE
+// ==================================================
+void subirCamadaZ() {
+
+  // DIREÇÃO SUBIDA
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+
+
+  // POTÊNCIA INDIVIDUAL
+  analogWrite(ENZ1, VELOCIDADE_Z1);
+  analogWrite(ENZ2, VELOCIDADE_Z2);
+
+  delay(ALTURA_CAMADA);
+
+
+  // FREIA SUAVEMENTE
+  for (int v = 255; v >= 120; v -= 10) {
+
+    int pwm1 = map(v, 120, 255, 120, VELOCIDADE_Z1);
+    int pwm2 = map(v, 120, 255, 120, VELOCIDADE_Z2);
+
+    analogWrite(ENZ1, pwm1);
+    analogWrite(ENZ2, pwm2);
+
+    delay(5);
+  }
+
+
+  // =========================================
+  // TRAVA ELÉTRICA
+  // =========================================
+
+  analogWrite(ENZ1, 90);
+  analogWrite(ENZ2, 90);
+
+
+  // mantém direção energizada
+  digitalWrite(Z1A, HIGH);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, HIGH);
+  digitalWrite(Z2B, LOW);
+}
+
+
+
+// ==================================================
+void pararTudo() {
+
+  analogWrite(ENX, 0);
+  analogWrite(ENY, 0);
+
+  analogWrite(ENZ1, 0);
+  analogWrite(ENZ2, 0);
+
+  digitalWrite(X1, LOW);
+  digitalWrite(X2, LOW);
+
+  digitalWrite(Y1, LOW);
+  digitalWrite(Y2, LOW);
+
+  digitalWrite(Z1A, LOW);
+  digitalWrite(Z1B, LOW);
+
+  digitalWrite(Z2A, LOW);
+  digitalWrite(Z2B, LOW);
+}

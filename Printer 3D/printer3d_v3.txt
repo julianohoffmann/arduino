@@ -1,0 +1,220 @@
+✅ Menu no OLED
+✅ Botão para trocar forma
+✅ Mensagens (“Preparando”, “Imprimindo”, “Finalizado”)
+✅ Movimento por passos (calibrado)
+✅ Demonstração antes de imprimir
+✅ LED de status
+✅ Buzzer ao finalizar
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// ===== PINOS =====
+
+// Eixo X
+int IN1 = 8;
+int IN2 = 9;
+int ENA = 10;
+
+// Eixo Y
+int IN3 = 6;
+int IN4 = 7;
+int ENB = 5;
+
+// Botão
+int botao = 2;
+
+// LED e buzzer
+int led = 13;
+int buzzer = 3;
+
+// ===== CONFIG =====
+#define PASSO 120          // ajuste fino (tempo de 1 passo)
+#define TAMANHO_PADRAO 6   // entre 5 e 10 (ideal)
+
+// ===== VARIÁVEIS =====
+int forma = 0;
+bool executando = false;
+
+// ================= SETUP =================
+void setup() {
+
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENA, OUTPUT);
+
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  pinMode(botao, INPUT_PULLUP);
+
+  pinMode(led, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+}
+
+// ================= LOOP =================
+void loop() {
+
+  if (!executando) {
+
+    mostrarMenu();
+
+    if (digitalRead(botao) == LOW) {
+      forma++;
+      if (forma > 2) forma = 0;
+      delay(300);
+    }
+
+    delay(1000);
+
+    executarImpressao();
+  }
+}
+
+// ================= DISPLAY =================
+
+void mostrarMenu() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(10, 5);
+  display.print("MiniPrint EDU");
+
+  display.setTextSize(2);
+  display.setCursor(10, 25);
+
+  if (forma == 0) display.print("CIRCULO");
+  if (forma == 1) display.print("QUADRADO");
+  if (forma == 2) display.print("TRIANGULO");
+
+  display.display();
+}
+
+void tela(String msg) {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(10, 25);
+  display.print(msg);
+  display.display();
+}
+
+// ================= MOVIMENTO =================
+
+void moverXpassos(int passos) {
+  for (int i = 0; i < passos; i++) {
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, LOW);
+    analogWrite(ENA, 150);
+    delay(PASSO);
+    pararX();
+    delay(50);
+  }
+}
+
+void moverYpassos(int passos) {
+  for (int i = 0; i < passos; i++) {
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
+    analogWrite(ENB, 150);
+    delay(PASSO);
+    pararY();
+    delay(50);
+  }
+}
+
+void pararX() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+}
+
+void pararY() {
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+// ================= FORMAS =================
+
+void quadrado(int t) {
+  for (int i = 0; i < 2; i++) {
+    moverXpassos(t);
+    moverYpassos(t);
+  }
+}
+
+void triangulo(int t) {
+  moverXpassos(t);
+  moverYpassos(t);
+  moverXpassos(t);
+}
+
+void circulo(int t) {
+  for (int i = 0; i < 20; i++) {
+    moverXpassos(1);
+    moverYpassos(1);
+  }
+}
+
+// ================= EXTRAS =================
+
+void demonstrarMovimento() {
+  moverXpassos(2);
+  moverYpassos(2);
+}
+
+void voltarOrigem() {
+  moverXpassos(10);
+  moverYpassos(10);
+}
+
+void beepFinal() {
+  tone(buzzer, 1000, 200);
+  delay(300);
+  tone(buzzer, 1500, 200);
+}
+
+// ================= EXECUÇÃO =================
+
+void executarImpressao() {
+
+  executando = true;
+
+  // LED ligado
+  digitalWrite(led, HIGH);
+
+  // Preparando
+  tela("Preparando");
+  delay(1500);
+
+  demonstrarMovimento();
+
+  // Imprimindo
+  tela("Imprimindo");
+
+  int t = TAMANHO_PADRAO;
+
+  if (forma == 0) circulo(t);
+  if (forma == 1) quadrado(t);
+  if (forma == 2) triangulo(t);
+
+  // Finalizado
+  tela("Finalizado");
+
+  digitalWrite(led, LOW);
+
+  beepFinal();
+
+  delay(3000);
+
+  voltarOrigem();
+
+  executando = false;
+}

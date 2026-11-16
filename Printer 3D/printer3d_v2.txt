@@ -1,0 +1,122 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// Pinos motores X
+int IN1 = 8;
+int IN2 = 9;
+int ENA = 10;
+
+// Pinos motores Y
+int IN3 = 6;
+int IN4 = 7;
+int ENB = 5;
+
+// Botão
+int botao = 2;
+
+int forma = 0; // 0 círculo, 1 quadrado, 2 triângulo
+
+void setup() {
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENA, OUTPUT);
+
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  pinMode(botao, INPUT_PULLUP);
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+}
+
+void loop() {
+
+  if (digitalRead(botao) == LOW) {
+    forma++;
+    if (forma > 2) forma = 0;
+    delay(300);
+  }
+
+  mostrarForma();
+
+  delay(2000); // tempo para visualizar
+
+  if (forma == 0) desenharCirculo();
+  if (forma == 1) desenharQuadrado();
+  if (forma == 2) desenharTriangulo();
+
+  delay(3000);
+}
+
+// ================= DISPLAY =================
+void mostrarForma() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+
+  display.setCursor(10, 20);
+
+  if (forma == 0) display.print("CIRCULO");
+  if (forma == 1) display.print("QUADRADO");
+  if (forma == 2) display.print("TRIANGULO");
+
+  display.display();
+}
+
+// ================= MOVIMENTOS =================
+
+void moverX(int tempo) {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  analogWrite(ENA, 150);
+  delay(tempo);
+  pararX();
+}
+
+void moverY(int tempo) {
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENB, 150);
+  delay(tempo);
+  pararY();
+}
+
+void pararX() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+}
+
+void pararY() {
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+// ================= FORMAS =================
+
+void desenharQuadrado() {
+  for (int i = 0; i < 2; i++) {
+    moverX(1000);
+    moverY(1000);
+  }
+}
+
+void desenharTriangulo() {
+  moverX(1000);
+  moverY(1000);
+  moverX(1000);
+}
+
+void desenharCirculo() {
+  for (int i = 0; i < 20; i++) {
+    moverX(100);
+    moverY(100);
+  }
+}

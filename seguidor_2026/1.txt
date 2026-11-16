@@ -1,0 +1,95 @@
+#define ENA 10
+#define IN1 9
+#define IN2 8
+
+#define ENB 6
+#define IN3 7
+#define IN4 5
+
+#define Velocidade 250
+
+#define Pino_Sensor_Direita 2
+#define Pino_Sensor_Esquerda 3
+
+int Sensor_Direita, Sensor_Esquerda;
+int detectou, naodetectou;
+
+String CorLinha = "preta"; // ou "branca"
+
+void Frente() {
+  analogWrite(ENA, Velocidade);
+  analogWrite(ENB, Velocidade);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void GiroHorario() {
+  analogWrite(ENA, Velocidade);
+  analogWrite(ENB, Velocidade);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void GiroAntiHorario() {
+  analogWrite(ENA, Velocidade);
+  analogWrite(ENB, Velocidade);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void Pare() {
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+}
+
+void setup() {
+  if (CorLinha == "preta") {
+    detectou = 1;
+    naodetectou = 0;
+  } else {
+    detectou = 0;
+    naodetectou = 1;
+  }
+
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  pinMode(Pino_Sensor_Direita, INPUT);
+  pinMode(Pino_Sensor_Esquerda, INPUT);
+
+  Serial.begin(9600);
+  Pare();
+}
+
+void loop() {
+  Sensor_Direita = digitalRead(Pino_Sensor_Direita);
+  Sensor_Esquerda = digitalRead(Pino_Sensor_Esquerda);
+
+  if (Sensor_Esquerda == naodetectou && Sensor_Direita == naodetectou) {
+    Frente();
+    Serial.println("Nenhum sensor detectou a linha.");
+  }
+  if (Sensor_Esquerda == naodetectou && Sensor_Direita == detectou) {
+    GiroHorario();
+    Serial.println("Somente o sensor da Direita detectou a linha.");
+  }
+  if (Sensor_Esquerda == detectou && Sensor_Direita == naodetectou) {
+    GiroAntiHorario();
+    delay(50);
+    Serial.println("Somente o sensor da Esquerda detectou a linha.");
+  }
+  if (Sensor_Esquerda == detectou && Sensor_Direita == detectou) {
+    Pare();
+    Serial.println("Ambos sensores detectaram a linha.");
+  }
+}
