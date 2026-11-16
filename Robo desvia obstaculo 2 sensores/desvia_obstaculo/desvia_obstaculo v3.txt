@@ -1,0 +1,159 @@
+#include <Servo.h>
+
+Servo servo;
+
+// -------------------- PINOS --------------------
+const int SERVO = 11;
+const int MET = 10;   // Motor esquerdo - trás
+const int MEF = 9;    // Motor esquerdo - frente
+const int MDF = 6;    // Motor direito - frente
+const int MDT = 5;    // Motor direito - trás
+const int TRIG = 8;
+const int ECO = 7;
+
+// -------------------- CONSTANTES --------------------
+const int POT_MAX = 220;          // potência máxima (PWM)
+const int POT_MIN = 120;          // potência inicial (para rampa)
+const int LIMITE_FRENTE = 25;     // distância mínima à frente (cm)
+const int LIMITE_LATERAL = 18;    // distância mínima lateral (cm)
+const int AMOSTRAS = 3;           // número de leituras para média
+
+int F, E, D; // distâncias medidas
+
+// -------------------- FUNÇÕES AUXILIARES --------------------
+
+// Faz leitura média de distância em um ângulo específico
+int medirDistancia(int angulo) {
+  servo.write(angulo);
+  delay(300); // tempo de estabilização do servo
+  long soma = 0;
+  int leiturasValidas = 0;
+
+  for (int i = 0; i < AMOSTRAS; i++) {
+    digitalWrite(TRIG, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG, LOW);
+
+    long tempo = pulseIn(ECO, HIGH, 25000); // timeout de 25 ms (~4m)
+    if (tempo > 0) {
+      soma += tempo / 58;
+      leiturasValidas++;
+    }
+    delay(50); // pequeno intervalo entre amostras
+  }
+
+  if (leiturasValidas == 0) return 100; // sem eco → assume longe
+  return soma / leiturasValidas;
+}
+
+// Rampa de aceleração/desaceleração
+void acelerarMotores(int pino1, int pino2, int pino3, int pino4, int potFinal, int passo, int atraso) {
+  for (int p = POT_MIN; p <= potFinal; p += passo) {
+    analogWrite(pino1, p);
+    analogWrite(pino2, p);
+    analogWrite(pino3, 0);
+    analogWrite(pino4, 0);
+    delay(atraso);
+  }
+}
+
+void desacelerarMotores(int pino1, int pino2, int pino3, int pino4, int potInicial, int passo, int atraso) {
+  for (int p = potInicial; p >= 0; p -= passo) {
+    analogWrite(pino1, p);
+    analogWrite(pino2, p);
+    analogWrite(pino3, 0);
+    analogWrite(pino4, 0);
+    delay(atraso);
+  }
+}
+
+// Movimentos básicos
+void parar() {
+  analogWrite(MDF, 0);
+  analogWrite(MEF, 0);
+  analogWrite(MDT, 0);
+  analogWrite(MET, 0);
+}
+
+void frenteSuave() {
+  acelerarMotores(MDF, MEF, MDT, MET, POT_MAX, 15, 20);
+}
+
+void re() {
+  analogWrite(MDF, 0);
+  analogWrite(MEF, 0);
+  analogWrite(MDT, POT_MAX);
+  analogWrite(MET, POT_MAX);
+}
+
+void direita() {
+  analogWrite(MDF, 0);
+  analogWrite(MEF, POT_MAX);
+  analogWrite(MDT, POT_MAX);
+  analogWrite(MET, 0);
+}
+
+void esquerda() {
+  analogWrite(MDF, POT_MAX);
+  analogWrite(MEF, 0);
+  analogWrite(MDT, 0);
+  analogWrite(MET, POT_MAX);
+}
+
+// -------------------- SETUP --------------------
+void setup() {
+  pinMode(MEF, OUTPUT);
+  pinMode(MET, OUTPUT);
+  pinMode(MDF, OUTPUT);
+  pinMode(MDT, OUTPUT);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECO, INPUT);
+
+  servo.attach(SERVO);
+  servo.write(90);
+  delay(1000);
+}
+
+// -------------------- LOOP --------------------
+void loop() {
+  // Leitura suave e precisa das distâncias
+  D = medirDistancia(30);   // direita
+  E = medirDistancia(150);  // esquerda
+  F = medirDistancia(90);   // frente
+
+  // -------------------- DECISÃO DE MOVIMENTO --------------------
+  if (F > LIMITE_FRENTE) {
+    // Caminho livre à frente
+    if (D > LIMITE_LATERAL && E > LIMITE_LATERAL) {
+      frenteSuave();
+      delay(400);
+      desacelerarMotores(MDF, MEF, MDT, MET, POT_MAX, 15, 20);
+    } 
+    else if (D > E) {
+      direita();
+      delay(250);
+    } 
+    else {
+      esquerda();
+      delay(250);
+    }
+  } 
+  else {
+    // Obstáculo à frente
+    re();
+    delay(400);
+    parar();
+    delay(100);
+    if (D > E) {
+      direita();
+    } else {
+      esquerda();
+    }
+    delay(500);
+  }
+
+  parar();
+  delay(80);
+}

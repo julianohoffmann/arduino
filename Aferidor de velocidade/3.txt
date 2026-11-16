@@ -1,0 +1,89 @@
+#include <LiquidCrystal.h>
+
+// LCD: RS, E, D4, D5, D6, D7
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+// Sensor ultrassônico
+int trig = 9;
+int echo = 8;
+
+// Variáveis
+float distAnterior = 0;
+unsigned long tempoAnterior = 0;
+
+float velocidadeMax = 0;
+
+// ===== FUNÇÃO DE DISTÂNCIA =====
+float medirDistancia() {
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  long dur = pulseIn(echo, HIGH);
+  return dur * 0.034 / 2;
+}
+
+void setup() {
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+
+  lcd.begin(16, 2);
+
+  lcd.print("Radar Iniciando");
+  delay(2000);
+  lcd.clear();
+
+  distAnterior = medirDistancia();
+  tempoAnterior = millis();
+}
+
+void loop() {
+
+  float distAtual = medirDistancia();
+  unsigned long tempoAtual = millis();
+
+  // ===== FILTRO DE DISTÂNCIA =====
+  if (distAtual > 20 && distAtual < 200) {
+
+    // ===== ZONA DE DETECÇÃO =====
+    if (distAtual < 120) {
+
+      float deltaDist = distAnterior - distAtual;
+      float deltaTempo = (tempoAtual - tempoAnterior) / 1000.0;
+
+      if (deltaTempo > 0) {
+
+        float velocidade = deltaDist / deltaTempo; // cm/s
+        float kmh = velocidade * 0.036;
+
+        // ===== FILTRO DE ERRO =====
+        if (kmh > 0 && kmh < 50) {
+
+          // ===== ATUALIZA VELOCIDADE MÁXIMA =====
+          if (kmh > velocidadeMax) {
+            velocidadeMax = kmh;
+          }
+
+          // ===== LCD =====
+          lcd.setCursor(0, 0);
+          lcd.print("Vel: ");
+          lcd.print(kmh);
+          lcd.print(" km/h   ");
+
+          lcd.setCursor(0, 1);
+          lcd.print("Max: ");
+          lcd.print(velocidadeMax);
+          lcd.print(" km/h   ");
+        }
+      }
+    }
+  }
+
+  // Atualiza referência
+  distAnterior = distAtual;
+  tempoAnterior = tempoAtual;
+
+  delay(200);
+}

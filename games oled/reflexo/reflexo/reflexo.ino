@@ -1,0 +1,260 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// -------------------- CONFIGURAÇÃO TELA OLED --------------------
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// -------------------- PARTE 1: OLHOS --------------------
+int ref_eye_height = 40;
+int ref_eye_width = 40;
+int ref_space_between_eye = 10;
+int ref_corner_radius = 10;
+
+int left_eye_height = ref_eye_height;
+int left_eye_width = ref_eye_width;
+int left_eye_x = 32;
+int left_eye_y = 32;
+int right_eye_x = 32 + ref_eye_width + ref_space_between_eye;
+int right_eye_y = 32;
+int right_eye_height = ref_eye_height;
+int right_eye_width = ref_eye_width;
+
+void draw_eyes(bool update = true) {
+  display.clearDisplay();
+  int x = int(left_eye_x - left_eye_width / 2);
+  int y = int(left_eye_y - left_eye_height / 2);
+  display.fillRoundRect(x, y, left_eye_width, left_eye_height, ref_corner_radius, SSD1306_WHITE);
+  x = int(right_eye_x - right_eye_width / 2);
+  y = int(right_eye_y - right_eye_height / 2);
+  display.fillRoundRect(x, y, right_eye_width, right_eye_height, ref_corner_radius, SSD1306_WHITE);
+  if (update) display.display();
+}
+
+void center_eyes(bool update = true) {
+  left_eye_height = ref_eye_height;
+  left_eye_width = ref_eye_width;
+  right_eye_height = ref_eye_height;
+  right_eye_width = ref_eye_width;
+  left_eye_x = SCREEN_WIDTH / 2 - ref_eye_width / 2 - ref_space_between_eye / 2;
+  left_eye_y = SCREEN_HEIGHT / 2;
+  right_eye_x = SCREEN_WIDTH / 2 + ref_eye_width / 2 + ref_space_between_eye / 2;
+  right_eye_y = SCREEN_HEIGHT / 2;
+  draw_eyes(update);
+}
+
+void blink(int speed = 12) {
+  draw_eyes();
+  for (int i = 0; i < 3; i++) {
+    left_eye_height -= speed;
+    right_eye_height -= speed;
+    draw_eyes();
+    delay(1);
+  }
+  for (int i = 0; i < 3; i++) {
+    left_eye_height += speed;
+    right_eye_height += speed;
+    draw_eyes();
+    delay(1);
+  }
+}
+
+void sleepEyes() {
+  left_eye_height = 2;
+  right_eye_height = 2;
+  draw_eyes(true);
+}
+
+void wakeup() {
+  sleepEyes();
+  for (int h = 0; h <= ref_eye_height; h += 2) {
+    left_eye_height = h;
+    right_eye_height = h;
+    draw_eyes(true);
+  }
+}
+
+void happy_eye() {
+  center_eyes(false);
+  int offset = ref_eye_height / 2;
+  for (int i = 0; i < 10; i++) {
+    display.fillTriangle(left_eye_x - left_eye_width / 2 - 1, left_eye_y + offset,
+                         left_eye_x + left_eye_width / 2 + 1, left_eye_y + 5 + offset,
+                         left_eye_x - left_eye_width / 2 - 1, left_eye_y + left_eye_height + offset, SSD1306_BLACK);
+    display.fillTriangle(right_eye_x + right_eye_width / 2 + 1, right_eye_y + offset,
+                         right_eye_x - left_eye_width / 2 - 1, right_eye_y + 5 + offset,
+                         right_eye_x + right_eye_width / 2 + 1, right_eye_y + right_eye_height + offset, SSD1306_BLACK);
+    offset -= 2;
+    display.display();
+    delay(1);
+  }
+  delay(1000);
+}
+
+void intro_eyes() {
+  wakeup();
+  delay(400);
+  center_eyes(true);
+  delay(400);
+  blink(10);
+  delay(400);
+  happy_eye();
+  delay(400);
+  sleepEyes();
+  delay(400);
+
+  // Limpa a tela após os olhos
+  display.clearDisplay();
+  display.display();
+}
+
+// -------------------- JOYSTICK E BUZZER --------------------
+#define JOY_X A0
+#define JOY_Y A1
+#define JOY_BUTTON 2
+#define BUZZER 11
+
+// -------------------- VARIÁVEIS DO JOGO --------------------
+int playerX = SCREEN_WIDTH / 2;
+int playerY = SCREEN_HEIGHT / 2;
+int targetX, targetY;
+int score = 0;
+unsigned long lastTargetTime = 0;
+unsigned long reactionTime = 10000; // tempo limite (ms)
+
+// -------------------- FUNÇÕES DO JOGO --------------------
+void spawnTarget() {
+  targetX = random(0, SCREEN_WIDTH - 5);
+  targetY = random(0, SCREEN_HEIGHT - 5);
+  lastTargetTime = millis();
+}
+
+void readJoystick() {
+  int xVal = analogRead(JOY_X);
+  int yVal = analogRead(JOY_Y);
+
+  if (xVal < 400) playerX -= 4;
+  if (xVal > 600) playerX += 4;
+  if (yVal < 400) playerY += 4;
+  if (yVal > 600) playerY -= 4;
+
+  if (playerX < 0) playerX = 0;
+  if (playerX > SCREEN_WIDTH) playerX = SCREEN_WIDTH;
+  if (playerY < 0) playerY = 0;
+  if (playerY > SCREEN_HEIGHT) playerY = SCREEN_HEIGHT;
+}
+
+void gameOver() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
+  int16_t xGameOver = (SCREEN_WIDTH - 6*9) / 2; 
+  display.setCursor(xGameOver, 25);
+  display.println("GAME OVER");
+
+  String scoreText = "Score: " + String(score);
+  int16_t xScore = (SCREEN_WIDTH - 6*scoreText.length()) / 2;
+  display.setCursor(xScore, 40);
+  display.println(scoreText);
+
+  display.display();
+  tone(BUZZER, 500, 500); 
+  delay(3000);
+
+  score = 0;
+  playerX = SCREEN_WIDTH / 2;
+  playerY = SCREEN_HEIGHT / 2;
+  spawnTarget();
+}
+
+// -------------------- SETUP --------------------
+void setup() {
+  pinMode(JOY_BUTTON, INPUT_PULLUP);
+  pinMode(BUZZER, OUTPUT);
+  Serial.begin(9600);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
+  // ---- ANIMAÇÃO DE OLHOS ----
+  intro_eyes();
+
+  // ---- NOME ----
+  String chars = "juliano hoffmann";
+  int16_t xChars = (SCREEN_WIDTH - 6 * chars.length()) / 2;
+  int16_t yChars = (SCREEN_HEIGHT - 8) / 2; // central vertical aproximada
+  display.setCursor(xChars, yChars);
+  display.setTextSize(1);
+  display.println(chars);
+  display.display();
+  delay(1000);
+
+  // ---- ANO "2025" ----
+  String year = "2025";
+  int textSizeYear = 2;
+  int16_t xYear = (SCREEN_WIDTH - 6 * textSizeYear * year.length()) / 2;
+  int16_t yYear = (SCREEN_HEIGHT - 8 * textSizeYear) / 2;
+  display.clearDisplay();
+  display.setCursor(xYear, yYear);
+  display.setTextSize(textSizeYear);
+  display.println(year);
+  display.display();
+  delay(1000);
+  display.setTextSize(1); // volta ao normal
+
+  // ---- TÍTULO "Reflexo" ----
+  String title = "Reflexo";
+  int textSizeTitle = 2;
+  int16_t xTitle = (SCREEN_WIDTH - 6 * textSizeTitle * title.length()) / 2;
+  int16_t yTitle = (SCREEN_HEIGHT - 8 * textSizeTitle) / 2;
+  display.clearDisplay();
+  display.setCursor(xTitle, yTitle);
+  display.setTextSize(textSizeTitle);
+  display.println(title);
+  display.display();
+  delay(2000);
+
+  // Inicia o jogo
+  spawnTarget();
+}
+
+// -------------------- LOOP --------------------
+void loop() {
+  readJoystick();
+
+  display.clearDisplay();
+
+  display.fillRect(targetX, targetY, 5, 5, SSD1306_WHITE);
+  display.fillCircle(playerX, playerY, 3, SSD1306_WHITE);
+
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.print("Score: ");
+  display.print(score);
+
+  display.display();
+
+  if (abs(playerX - targetX) <= 3 && abs(playerY - targetY) <= 3) {
+    score++;
+    spawnTarget();
+    tone(BUZZER, 1000, 150); 
+  }
+
+  if (millis() - lastTargetTime > reactionTime) {
+    gameOver();
+  }
+
+  delay(50);
+}

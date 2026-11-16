@@ -1,0 +1,127 @@
+#include <Servo.h>
+
+Servo servo;
+
+// -------------------- DEFINIÇÕES DE PINOS --------------------
+const int SERVO = 11;
+const int MET = 10;   // Motor esquerdo - trás
+const int MEF = 9;    // Motor esquerdo - frente
+const int MDF = 6;    // Motor direito - frente
+const int MDT = 5;    // Motor direito - trás
+const int TRIG = 8;
+const int ECO = 7;
+
+// -------------------- VARIÁVEIS GERAIS --------------------
+const int POT = 200;        // potência base (0-255)
+const int LIMITE_FRENTE = 30; // distância mínima à frente (cm)
+const int LIMITE_LATERAL = 20; // distância mínima lateral (cm)
+int F, E, D;                // distâncias medidas
+
+// -------------------- FUNÇÕES AUXILIARES --------------------
+
+// Lê distância do sensor para um ângulo específico
+int medirDistancia(int angulo) {
+  servo.write(angulo);
+  delay(350); // tempo para o servo estabilizar
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  long tempo = pulseIn(ECO, HIGH, 25000); // timeout de 25ms (~4m)
+  if (tempo == 0) tempo = 25000; // sem retorno → considera longe
+  int distancia = tempo / 58;
+  return distancia;
+}
+
+// Movimentos do robô
+void parar() {
+  analogWrite(MDF, 0);
+  analogWrite(MEF, 0);
+  analogWrite(MDT, 0);
+  analogWrite(MET, 0);
+}
+
+void frente() {
+  analogWrite(MDF, POT);
+  analogWrite(MEF, POT);
+  analogWrite(MDT, 0);
+  analogWrite(MET, 0);
+}
+
+void re() {
+  analogWrite(MDF, 0);
+  analogWrite(MEF, 0);
+  analogWrite(MDT, POT);
+  analogWrite(MET, POT);
+}
+
+void direita() {
+  analogWrite(MDF, 0);
+  analogWrite(MEF, POT);
+  analogWrite(MDT, POT);
+  analogWrite(MET, 0);
+}
+
+void esquerda() {
+  analogWrite(MDF, POT);
+  analogWrite(MEF, 0);
+  analogWrite(MDT, 0);
+  analogWrite(MET, POT);
+}
+
+// -------------------- CONFIGURAÇÃO INICIAL --------------------
+void setup() {
+  pinMode(MEF, OUTPUT);
+  pinMode(MET, OUTPUT);
+  pinMode(MDF, OUTPUT);
+  pinMode(MDT, OUTPUT);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECO, INPUT);
+
+  servo.attach(SERVO);
+  servo.write(90); // posição inicial (frente)
+  delay(1000);
+}
+
+// -------------------- LOOP PRINCIPAL --------------------
+void loop() {
+  // Lê as distâncias nas três direções
+  D = medirDistancia(30);   // direita
+  E = medirDistancia(150);  // esquerda
+  F = medirDistancia(90);   // frente
+
+  // -------------------- LÓGICA DE DESVIO --------------------
+  if (F > LIMITE_FRENTE) {
+    // Caminho livre à frente
+    if (D > LIMITE_LATERAL && E > LIMITE_LATERAL) {
+      frente();
+      delay(400);
+    } 
+    else if (D > E) {
+      direita();
+      delay(250);
+    } 
+    else {
+      esquerda();
+      delay(250);
+    }
+  } 
+  else {
+    // Obstáculo muito próximo
+    re();
+    delay(400);
+    parar();
+    delay(100);
+    if (D > E) {
+      direita();
+    } else {
+      esquerda();
+    }
+    delay(500);
+  }
+
+  parar();
+  delay(50); // pequena pausa entre ciclos
+}
