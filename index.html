@@ -4,8 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Projetos Arduino | Juliano Hoffmann</title>
+<title>Projetos Arduino | Robótica e Tecnologia</title>
 
 <style>
 * {
@@ -18,71 +17,184 @@ body {
     font-family: Arial, sans-serif;
     background: #0b1220;
     color: #f1f5f9;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    line-height: 1.6;
 }
 
 header {
-    padding: 25px 8%;
+    padding: 22px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     border-bottom: 1px solid #263247;
 }
 
 .logo {
-    color: #38bdf8;
     font-size: 22px;
     font-weight: bold;
+    color: #38bdf8;
 }
 
-main {
-    flex: 1;
+header a {
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+.hero {
+    min-height: 530px;
+    padding: 90px 8%;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-    text-align: center;
-    padding: 40px 20px;
+    justify-content: space-between;
+    gap: 40px;
 }
 
-.icone {
-    font-size: 100px;
-    margin-bottom: 25px;
-    filter: drop-shadow(0 0 20px #0284c7);
+.hero-content {
+    max-width: 600px;
+}
+
+.tag {
+    color: #38bdf8;
+    font-weight: bold;
+    letter-spacing: 2px;
+    font-size: 13px;
 }
 
 h1 {
-    font-size: clamp(35px, 6vw, 60px);
-    margin-bottom: 35px;
+    font-size: clamp(36px, 5vw, 58px);
+    line-height: 1.15;
+    margin: 20px 0;
 }
 
 h1 span {
     color: #38bdf8;
 }
 
+.hero p {
+    color: #94a3b8;
+    font-size: 17px;
+    margin-bottom: 30px;
+}
+
 .botao {
     display: inline-block;
+    padding: 14px 25px;
     background: #0284c7;
     color: white;
-    padding: 16px 32px;
-    border-radius: 8px;
     text-decoration: none;
-    font-size: 17px;
+    border-radius: 8px;
     font-weight: bold;
     transition: .3s;
 }
 
 .botao:hover {
     background: #0ea5e9;
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px #0284c755;
+    transform: translateY(-3px);
+}
+
+.visual {
+    font-size: 150px;
+    text-align: center;
+    filter: drop-shadow(0 0 25px #0284c7);
+}
+
+section {
+    padding: 65px 8%;
+}
+
+.titulo {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+.subtitulo {
+    text-align: center;
+    color: #94a3b8;
+    margin-bottom: 40px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 22px;
+}
+
+.card {
+    background: #172338;
+    padding: 28px;
+    border-radius: 12px;
+    border: 1px solid #263750;
+    transition: .3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: #38bdf8;
+}
+
+.card .icone {
+    font-size: 38px;
+    margin-bottom: 15px;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+    color: #38bdf8;
+}
+
+.card p {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.sobre {
+    background: #111c30;
+    text-align: center;
+}
+
+.sobre p {
+    max-width: 750px;
+    margin: auto;
+    color: #94a3b8;
+}
+
+.cta {
+    text-align: center;
+    padding: 75px 8%;
+}
+
+.cta h2 {
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+.cta p {
+    color: #94a3b8;
+    margin-bottom: 25px;
 }
 
 footer {
     text-align: center;
-    padding: 22px;
+    padding: 25px;
     border-top: 1px solid #263247;
     color: #64748b;
     font-size: 13px;
+}
+
+@media(max-width: 700px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding-top: 65px;
+    }
+
+    .visual {
+        font-size: 100px;
+    }
+
+    header {
+        padding: 20px 5%;
+    }
 }
 </style>
 </head>
@@ -91,28 +203,124 @@ footer {
 
 <header>
     <div class="logo">⚡ ARDUINO LAB</div>
+    <a href="#projetos">Projetos</a>
 </header>
 
-<main>
+<div class="hero">
+    <div class="hero-content">
+        <span class="tag">TECNOLOGIA • CRIATIVIDADE • INOVAÇÃO</span>
 
-    <div class="icone">🤖</div>
+        <h1>
+            Ideias que se transformam em
+            <span>projetos reais.</span>
+        </h1>
 
-    <h1>
-        Projetos <span>Arduino</span>
-    </h1>
+        <p>
+            Explore projetos desenvolvidos com Arduino,
+            robótica, automação e eletrônica.
+            Códigos, experiências e soluções compartilhadas
+            para aprender, experimentar e criar.
+        </p>
+
+        <a class="botao" href="https://github.com/SEU-USUARIO/SEU-REPOSITORIO"
+           target="_blank">
+            Acessar repositório →
+        </a>
+    </div>
+
+    <div class="visual">🤖</div>
+</div>
+
+<section id="projetos">
+    <h2 class="titulo">O que você vai encontrar?</h2>
+    <p class="subtitulo">
+        Conhecimento aplicado em projetos práticos.
+    </p>
+
+    <div class="cards">
+
+        <div class="card">
+            <div class="icone">🤖</div>
+            <h3>Robótica</h3>
+            <p>
+                Robôs móveis, seguidores de linha,
+                robôs bípedes e sistemas de controle.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="icone">⚙️</div>
+            <h3>Automação</h3>
+            <p>
+                Sistemas automatizados, sensores,
+                acionamentos e controle inteligente.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="icone">💡</div>
+            <h3>Eletrônica</h3>
+            <p>
+                Circuitos, displays, motores,
+                componentes e experimentos.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="icone">💻</div>
+            <h3>Programação</h3>
+            <p>
+                Códigos Arduino, lógica de programação,
+                bibliotecas e aplicações práticas.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+<section class="sobre">
+    <h2 class="titulo">Aprender fazendo!</h2>
+    <p>
+        Cada projeto representa uma oportunidade de aprender,
+        testar ideias, resolver problemas e desenvolver
+        novas habilidades em tecnologia.
+        O repositório reúne códigos e experiências que
+        podem servir de inspiração para estudantes,
+        professores e entusiastas da eletrônica.
+    </p>
+</section>
+
+<section class="cta">
+    <h2>Vamos construir algo novo?</h2>
+    <p>
+        Acesse o GitHub e explore os projetos disponíveis.
+    </p>
 
     <a class="botao"
-       href="https://julianohoffmann.github.io/arduino/"
+       href="https://github.com/SEU-USUARIO/SEU-REPOSITORIO"
        target="_blank">
-       Acessar projetos →
+       <span>⌘</span> Explorar projetos no GitHub
     </a>
-
-</main>
+</section>
 
 <footer>
-    © 2026 | Juliano Hoffmann
+    © 2026 Arduino Lab | Robótica, Eletrônica e Programação
 </footer>
+
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        const destino = document.querySelector(this.getAttribute('href'));
+
+        if (destino) {
+            e.preventDefault();
+            destino.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    });
+});
+</script>
 
 </body>
 </html>
-
